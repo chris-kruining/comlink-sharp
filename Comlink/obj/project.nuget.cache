@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "xMCIVQTMHISlvQNWHdiuA4qgCaoPkk8q/mdRWojcvVW4scJS2Kr6iu9GCKn3kxeOpBn9B6Utk6fzmOxIPFctoQ==",
+  "success": true,
+  "projectFilePath": "D:\\Github\\comlink-sharp\\Comlink\\Comlink.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ChrisKruining\\.nuget\\packages\\microsoft.web.webview2\\0.9.538-prerelease\\microsoft.web.webview2.0.9.538-prerelease.nupkg.sha512"
+  ],
+  "logs": []
+}

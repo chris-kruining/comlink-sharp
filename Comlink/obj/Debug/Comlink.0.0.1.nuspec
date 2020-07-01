@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Comlink</id>
+    <version>0.0.1</version>
+    <authors>Chris Kruining</authors>
+    <owners>Chris Kruining</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="file">LICENSE</license>
+    <licenseUrl>https://aka.ms/deprecateLicenseUrl</licenseUrl>
+    <projectUrl>https://github.com/chris-kruining/comlink-sharp</projectUrl>
+    <description>Package Description</description>
+    <copyright>MIT</copyright>
+    <repository type="Github" url="https://github.com/chris-kruining/comlink-sharp" />
+    <dependencies>
+      <group targetFramework=".NETCoreApp5.0">
+        <dependency id="Microsoft.Web.WebView2" version="0.9.538-prerelease" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="D:\Github\comlink-sharp\Comlink\bin\Debug\net5.0\Comlink.dll" target="lib\net5.0\Comlink.dll" />
+    <file src="D:\Github\comlink-sharp\LICENSE" target="LICENSE" />
+  </files>
+</package>
