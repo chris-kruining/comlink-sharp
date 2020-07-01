@@ -1,0 +1,17 @@
+D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.Core.AssemblyInfoInputs.cache
+D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.Core.AssemblyInfo.cs
+D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.Core.csproj.CoreCompileInputs.cache
+D:\Github\comlink-sharp\Comlink\bin\Debug\net5.0\Comlink.Core.deps.json
+D:\Github\comlink-sharp\Comlink\bin\Debug\net5.0\Comlink.Core.dll
+D:\Github\comlink-sharp\Comlink\bin\Debug\net5.0\Comlink.Core.pdb
+D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.Core.dll
+D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.Core.pdb
+D:\Github\comlink-sharp\Comlink.Core\bin\Debug\net5.0\Comlink.Core.deps.json
+D:\Github\comlink-sharp\Comlink.Core\bin\Debug\net5.0\Comlink.Core.dll
+D:\Github\comlink-sharp\Comlink.Core\bin\Debug\net5.0\Comlink.Core.pdb
+D:\Github\comlink-sharp\Comlink.Core\obj\Debug\net5.0\Comlink.Core.AssemblyInfoInputs.cache
+D:\Github\comlink-sharp\Comlink.Core\obj\Debug\net5.0\Comlink.Core.AssemblyInfo.cs
+D:\Github\comlink-sharp\Comlink.Core\obj\Debug\net5.0\Comlink.Core.csproj.CoreCompileInputs.cache
+D:\Github\comlink-sharp\Comlink.Core\obj\Debug\net5.0\Comlink.Core.dll
+D:\Github\comlink-sharp\Comlink.Core\obj\Debug\net5.0\Comlink.Core.pdb
+D:\Github\comlink-sharp\Comlink.Core\obj\Debug\net5.0\Comlink.Core.csprojAssemblyReference.cache

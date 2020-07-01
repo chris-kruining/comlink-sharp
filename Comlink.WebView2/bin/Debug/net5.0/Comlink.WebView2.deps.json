@@ -1,0 +1,56 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "Comlink.WebView2/0.0.2": {
+        "dependencies": {
+          "Comlink.Core": "0.0.2",
+          "Microsoft.Web.WebView2": "0.9.538-prerelease"
+        },
+        "runtime": {
+          "Comlink.WebView2.dll": {}
+        }
+      },
+      "Microsoft.Web.WebView2/0.9.538-prerelease": {
+        "runtime": {
+          "lib/netcoreapp3.0/Microsoft.Web.WebView2.Core.dll": {
+            "assemblyVersion": "0.0.0.0",
+            "fileVersion": "0.0.0.0"
+          },
+          "lib/netcoreapp3.0/Microsoft.Web.WebView2.Wpf.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Comlink.Core/0.0.2": {
+        "runtime": {
+          "Comlink.Core.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Comlink.WebView2/0.0.2": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Web.WebView2/0.9.538-prerelease": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-oaUFDmRrz1/dlFY3N6Us4zAGW7dvNGCklisto1BFr9YWjiHx0PWLuRrju3gc5wLGf59YJpN7ltbNZrI74zaHaQ==",
+      "path": "microsoft.web.webview2/0.9.538-prerelease",
+      "hashPath": "microsoft.web.webview2.0.9.538-prerelease.nupkg.sha512"
+    },
+    "Comlink.Core/0.0.2": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

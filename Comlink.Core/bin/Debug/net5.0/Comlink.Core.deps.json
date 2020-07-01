@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "Comlink.Core/0.0.2": {
+        "runtime": {
+          "Comlink.Core.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Comlink.Core/0.0.2": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
