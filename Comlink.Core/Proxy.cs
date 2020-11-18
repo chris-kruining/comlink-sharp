@@ -1,64 +1,88 @@
-using System;
+﻿using System;
 using System.Dynamic;
+using System.Threading.Tasks;
 
 namespace Comlink.Core
 {
-    public class Proxyfied : Proxy<Object?>
+    public class Proxy<T> : ProxyInternal<T>
     {
-        public Proxyfied(Object? target) : base(target)
+        public struct Arguments
         {
+            public Func<T, PropertyAccessor, ValueTask<Object?>>? Get;
+            public Func<T, PropertyAccessor, Object?, ValueTask<Boolean>>? Set;
+            public Func<T, PropertyAccessor, Object?[], ValueTask<Object?>>? Apply;
+            public Func<T, Object?[], ValueTask<T>>? Construct;
         }
 
-        public override Boolean Apply(Object target, String property, Object?[] args)
+        private readonly Arguments _arguments;
+
+        public Proxy(T target, Arguments arguments) : base(target)
         {
-            throw new NotImplementedException();
+            _arguments = arguments;
         }
 
-        public override Object? Construct(Object target, Object?[] args)
+        public override ValueTask<Object?> Get(T target, PropertyAccessor property)
         {
-            throw new NotImplementedException();
+            // TODO(Chris Kruining) Add default implementation instead of throwing an exception
+            Func<T, PropertyAccessor, ValueTask<Object?>> get = _arguments.Get ?? throw new NotImplementedException();
+
+            return get.Invoke(target, property);
         }
 
-        public override Object? Get(Object target, String property)
+        public override ValueTask<Boolean> Set(T target, PropertyAccessor property, Object? value)
         {
-            throw new NotImplementedException();
+            // TODO(Chris Kruining) Add default implementation instead of throwing an exception
+            Func<T, PropertyAccessor, Object?, ValueTask<Boolean>> set = _arguments.Set ?? throw new NotImplementedException();
+
+            return set.Invoke(target, property, value);
         }
 
-        public override Boolean Set(Object target, String property, Object? value)
+        public override ValueTask<Object?> Apply(T target, PropertyAccessor property, Object?[] args)
         {
-            throw new NotImplementedException();
+            // TODO(Chris Kruining) Add default implementation instead of throwing an exception
+            Func<T, PropertyAccessor, Object?[], ValueTask<Object?>> apply = _arguments.Apply ?? throw new NotImplementedException();
+
+            return apply.Invoke(target, property, args);
+        }
+
+        public override ValueTask<T> Construct(T target, Object?[] args)
+        {
+            // TODO(Chris Kruining) Add default implementation instead of throwing an exception
+            Func<T, Object?[], ValueTask<T>> construct = _arguments.Construct ?? throw new NotImplementedException();
+
+            return construct.Invoke(target, args);
         }
     }
 
-    public abstract class Proxy<T> : DynamicObject
+    public abstract class ProxyInternal<T> : DynamicObject
     {
         private readonly T _target;
 
-        protected Proxy(T target)
+        protected ProxyInternal(T target)
         {
             _target = target;
         }
 
-        public abstract Object? Get(T target, String property);
-        public abstract Boolean Set(T target, String property, Object? value);
-        public abstract Boolean Apply(T target, String property, Object?[] args);
-        public abstract T Construct(T target, Object?[] args);
+        public abstract ValueTask<Object?> Get(T target, PropertyAccessor property);
+        public abstract ValueTask<Boolean> Set(T target, PropertyAccessor property, Object? value);
+        public abstract ValueTask<Object?> Apply(T target, PropertyAccessor property, Object?[] args);
+        public abstract ValueTask<T> Construct(T target, Object?[] args);
 
         public override Boolean TryGetMember(GetMemberBinder binder, out Object? result)
         {
-            result = Get(_target, binder.Name);
+            result = Get(_target, binder.Name).GetAwaiter().GetResult();
 
             return true;
         }
         public override Boolean TrySetMember(SetMemberBinder binder, Object? value)
         {
-            return Set(_target, binder.Name, value);
+            return Set(_target, binder.Name, value).GetAwaiter().GetResult();
         }
         public override Boolean TryInvokeMember(InvokeMemberBinder binder, Object?[]? args, out Object? result)
         {
             try
             {
-                result = Apply(_target, binder.Name, args ?? new Object?[0]);
+                result = Apply(_target, binder.Name, args ?? new Object?[0]).GetAwaiter().GetResult();
                 return true;
             }
             catch
@@ -71,7 +95,7 @@ namespace Comlink.Core
         {
             try
             {
-                result = Construct(_target, args ?? new Object?[0]);
+                result = Construct(_target, args ?? Array.Empty<Object?>()).GetAwaiter().GetResult();
                 return true;
             }
             catch
@@ -80,5 +104,25 @@ namespace Comlink.Core
                 return false;
             }
         }
+    }
+
+    public class PropertyAccessor
+    {
+        private readonly String? _prop;
+        private readonly Symbol? _symbol;
+
+        public PropertyAccessor(String? prop = null, Symbol? symbol = null)
+        {
+            _prop = prop;
+            _symbol = symbol;
+        }
+
+        public override String ToString() => _prop ?? _symbol?.ToString() ?? throw new Exception("Invalid state, both 'prop' and 'symbol' are null");
+
+        public static implicit operator String?(PropertyAccessor property) => property._prop;
+        public static implicit operator Symbol?(PropertyAccessor property) => property._symbol;
+
+        public static implicit operator PropertyAccessor(String property) => new PropertyAccessor(property);
+        public static implicit operator PropertyAccessor(Symbol property) => new PropertyAccessor(null, property);
     }
 }

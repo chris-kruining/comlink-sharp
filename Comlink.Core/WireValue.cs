@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Comlink.Core
 {
@@ -24,7 +24,16 @@ namespace Comlink.Core
         public String? Name { get; set; }
         public Object? Value { get; set; }
     }
-    public class WireValue : IRawWireValue, IHandlerWireValue
+
+    public interface IWireValue : IRawWireValue, IHandlerWireValue
+    {
+        WireValueType Type { get; set; }
+        new String? Id { get; set; }
+        new String? Name { get; set; }
+        new Object? Value { get; set; }
+    }
+
+    public class WireValue : IWireValue
     {
         public WireValueType Type { get; set; }
         public String? Id { get; set; }

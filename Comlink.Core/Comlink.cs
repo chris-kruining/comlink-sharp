@@ -1,120 +1,228 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Comlink.Json;
+using System.Threading.Tasks;
 
 namespace Comlink.Core
 {
     public static class Comlink
     {
-        public static Remote<T> Wrap<T>(Endpoint endpoint, Object? target = null) =>
-            CreateProxy<T>(endpoint, new String[0], target);
+        public static Symbol ProxyMarker { get; } = new Symbol("Comlink.proxy");
+        public static Symbol CreateEndpoint { get; } = new Symbol("Comlink.endpoint");
+        public static Symbol ReleaseProxy { get; } = new Symbol("Comlink.releaseProxy");
 
-        public static Remote<T> CreateProxy<T>(Endpoint endpoint, String[] path, Object? target = null)
+        // TODO(Chris Kruining) Figure out if we need this, since we're working in C# and not ES6
+        private static readonly Symbol ThrowMarker = new Symbol("Comlink.thrown");
+
+        public static Proxy<T> Wrap<T>(IEndpoint endpoint, Object? target = null) => CreateProxy<T>(endpoint, Array.Empty<PropertyAccessor>(), target);
+
+        public static Proxy<T> CreateProxy<T>(IEndpoint endpoint, PropertyAccessor[] path, Object? target = null)
         {
             target ??= new Action(() => { });
 
-            return new Remote<T>(default);
+            Boolean isProxyReleased = false;
+
+            Proxy<T>? proxy = null;
+            proxy = new Proxy<T>((T)target, new Proxy<T>.Arguments
+            {
+                Get = async (_target, property) =>
+                {
+                    ThrowIfProxyReleased(isProxyReleased);
+
+                    if (property == ReleaseProxy)
+                    {
+                        return (Action)(async () =>
+                        {
+                            await RequestResponseMessage(endpoint, new Message
+                            {
+                                Type = MessageType.Release,
+                                Path = path.Select(p => p.ToString()),
+                            });
+
+                            endpoint.Close();
+                            isProxyReleased = true;
+                        });
+                    }
+
+                    if (property == "then")
+                    {
+                        if (!path.Any())
+                        {
+                            // ReSharper disable once AccessToModifiedClosure
+                            return ValueTask.FromResult(proxy);
+                        }
+
+                        IMessage message = new Message
+                        {
+                            Type = MessageType.Get,
+                            Path = path.Select(p => p.ToString()),
+                        };
+                        return await RequestResponseMessage(endpoint, message).FromWireValue<ValueTask?>();
+                    }
+
+                    return CreateProxy<T>(endpoint, path.Append(property));
+                },
+                Set = async (_target, property, value) =>
+                {
+                    ThrowIfProxyReleased(isProxyReleased);
+
+                    (IWireValue wireValue, ITransferable[] transferables) = ToWireValue(value);
+
+                    IMessage message = new Message
+                    {
+                        Type = MessageType.Set,
+                        Path = path.Append(property).Select(p => p.ToString()),
+                        Value = wireValue,
+                    };
+                    return await RequestResponseMessage(endpoint, message, transferables).FromWireValue<Boolean>();
+                },
+                Apply = async (_target, property, args) =>
+                {
+                    ThrowIfProxyReleased(isProxyReleased);
+
+                    PropertyAccessor last = path[^1];
+                    IMessage message;
+
+                    if (last == CreateEndpoint)
+                    {
+                        message = new Message
+                        {
+                            Type = MessageType.Endpoint,
+                        };
+                        return await RequestResponseMessage(endpoint, message).FromWireValue<ValueTask?>();
+                    }
+
+                    if (last == "bind")
+                    {
+                        return CreateProxy<T>(endpoint, path[..^2]);
+                    }
+
+                    (IEnumerable<IWireValue> arguments, IEnumerable<ITransferable> transferables) = ProcessArguments(args);
+
+                    message = new Message
+                    {
+                        Type = MessageType.Apply,
+                        Path = path.Select(p => p.ToString()),
+                        ArgumentList = arguments,
+                    };
+                    return await RequestResponseMessage(endpoint, message, transferables.ToArray()).FromWireValue<Object?>();
+                },
+                Construct = async (_target, args) =>
+                {
+                    ThrowIfProxyReleased(isProxyReleased);
+
+                    (IEnumerable<IWireValue> arguments, IEnumerable<ITransferable> transferables) = ProcessArguments(args);
+                    IMessage message = new Message
+                    {
+                        Type = MessageType.Construct,
+                        Path = path.Select(p => p.ToString()),
+                        ArgumentList = arguments,
+                    };
+
+                    return await RequestResponseMessage(endpoint, message, transferables.ToArray()).FromWireValue<T>();
+                },
+            });
+
+            return proxy;
         }
 
-        public static Endpoint WindowEndpoint(IWindow window)
+        public static IEndpoint WindowEndpoint(IWindow window)
         {
             return new Endpoint(window);
         }
 
-        public static void Expose<T>(T target, Endpoint endpoint)
+        public static void Expose<T>(T target, IEndpoint endpoint)
         {
             endpoint.Message += message =>
             {
-                try
-                {
-                    Object?[] args = message.ArgumentList?.Select(FromWireValue).ToArray() ?? (message.Value != null ? new[]{ FromWireValue(message.Value) } : new Object?[0]);
+                Object?[] args = message.ArgumentList?.Select(FromWireValue).ToArray() ?? (message.Value != null ? new[]{ FromWireValue(message.Value) } : Array.Empty<Object?>());
 
-                    // NOTE(Chris Kruining) this uses the path provided by the message and converts it into MemberInfo for easy manipulation
-                    (Object? owner, Object? value, MemberInfo? member) = message.Path?.Aggregate<String, (Object? owner, Object? value, MemberInfo?)?>(
-                        (null, target, null),
-                        (obj, prop) =>
-                        {
-                            MemberInfo? member = obj?.value?.GetType().GetMember(prop, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public).FirstOrDefault();
-                            Object? value = null;
-
-                            if (member is PropertyInfo property)
-                            {
-                                value = property.GetValue(obj?.value);
-                            } 
-                            return (obj?.value, value, member);
-                        }
-                    ) ?? throw new Exception($"Unable to access the path '{message.Path}'");
-
-                    Object? returnValue = message.Type switch
+                // NOTE(Chris Kruining) this uses the path provided by the message and converts it into MemberInfo for easy manipulation
+                (Object? owner, Object? value, MemberInfo? member) = message.Path?.Aggregate<String, (Object? owner, Object? value, MemberInfo?)?>(
+                    (null, target, null),
+                    (obj, prop) =>
                     {
-                        MessageType.Get => value,
-                        MessageType.Set => new Func<Boolean>(() =>
+                        MemberInfo? member = obj?.value?.GetType().GetMember(prop, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public).FirstOrDefault();
+                        Object? value = null;
+
+                        if (member is PropertyInfo property)
                         {
-                            try
-                            {
-                                (member as PropertyInfo)?.SetValue(owner, args[0]);
-                                return true;
-                            }
-                            catch
-                            {
-                                return false;
-                            }
-                        }).Invoke(),
-                        MessageType.Apply => (member as MethodInfo)?.Invoke(owner, args),
-                        MessageType.Construct => new Proxyfied(Activator.CreateInstance(typeof(T), args)),
-                        MessageType.Endpoint => new Func<Object?>(() =>
-                        {
-                            (MessagePort port1, MessagePort port2) = new MessageChannel();
+                            value = property.GetValue(obj?.value);
+                        } 
 
-                            Expose(target, port2);
+                        return (obj?.value, value, member);
+                    }
+                ) ?? throw new Exception($"Unable to access the path '{message.Path}'");
 
-                            return Transfer(port1, port1);
-                        }).Invoke(),
-                        MessageType.Release => null,
-                        _ => throw new Exception("Unhandled message type"),
-                    };
-
-                    (WireValue wireValue, ITransferable[] transferables) = ToWireValue(returnValue);
-                    wireValue.Id = message.Id;
-
-                    endpoint.PostMessage(wireValue, transferables);
-                }
-                catch (Exception exception)
+                Object? returnValue = message.Type switch
                 {
+                    MessageType.Get => value,
+                    MessageType.Set => new Func<Boolean>(() =>
+                    {
+                        try
+                        {
+                            (member as PropertyInfo)?.SetValue(owner, args[0]);
 
-                }
+                            return true;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    }).Invoke(),
+                    MessageType.Apply => (member as MethodInfo)?.Invoke(owner, args),
+                    MessageType.Construct => Activator.CreateInstance(typeof(T), args), // TODO(Chris Kruining) proxyfy the instance
+                    MessageType.Endpoint => new Func<Object?>(() =>
+                    {
+                        (MessagePort port1, MessagePort port2) = new MessageChannel();
+
+                        Expose(target, port2);
+
+                        return Transfer(port1, port1);
+                    }).Invoke(),
+                    MessageType.Release => null,
+                    _ => throw new Exception("Unhandled message type"),
+                };
+
+                (IWireValue wireValue, ITransferable[] transferables) = ToWireValue(returnValue);
+                wireValue.Id = message.Id;
+
+                endpoint.PostMessage(wireValue, transferables);
             };
         }
 
         private static ConditionalWeakTable<Object, ITransferable[]> _transferCache = new ConditionalWeakTable<Object, ITransferable[]>();
-
         public static T Transfer<T>(T target, params ITransferable[] transferables)
         {
-            _transferCache.Add(target, transferables);
+            _transferCache.Add(target!, transferables);
 
             return target;
         }
 
-        private static readonly ProxyTransferHandler _handler = new ProxyTransferHandler();
-        public static (WireValue, ITransferable[]) ToWireValue<T>(T value)
+        public static Proxy<TValue> Proxy<TValue>(TValue target) => new Proxy<TValue>(target, new Proxy<TValue>.Arguments());
+
+        private static readonly IDictionary<String, ITransferHandler> _handlers = new Dictionary<String, ITransferHandler>
         {
-            if (_handler.CanHandle(value))
+            { "proxy", new ProxyTransferHandler() },
+            { "throw", new ThrowTransferHandler() }, 
+        };
+        public static (IWireValue Value, ITransferable[] Transferables) ToWireValue<T>(T value)
+        {
+            if (_handlers.FirstOrDefault(h => h.Value.CanHandle(value)) is ITransferHandler<T, Object?> handler)
             {
-                (MessagePort, ITransferable[] transferables) message = _handler.Serialize(value);
+                (Object? v, ITransferable[] transfers) = handler.Serialize(value);
 
                 return (
                     new WireValue
                     {
                         Type = WireValueType.Handler,
-                        Name = "proxy",
-                        Value = message,
+                        Name = handler.Name,
+                        Value = v,
                     },
-                    message.transferables
+                    transfers
                 );
             }
 
@@ -129,11 +237,108 @@ namespace Comlink.Core
             );
         }
 
-        public static Object? FromWireValue(WireValue wireValue) => wireValue.Type switch
+        public static Object? FromWireValue(IWireValue? wireValue) => wireValue?.Type switch
         {
-            WireValueType.Handler => _handler.deserialize((MessagePort)wireValue.Value!),
-            WireValueType.Raw => wireValue.Value,
-            _ => throw new Exception("Unhandled WireValue type")
+            WireValueType.Handler => _handlers[wireValue.Name ?? ""].Deserialize(wireValue.Value),
+            WireValueType.Raw when wireValue.Value is JsonElement jsonElement => jsonElement.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Number => jsonElement.TryGetInt64(out long l) ? l : jsonElement.GetDouble(),
+                JsonValueKind.String => jsonElement.TryGetDateTime(out DateTime datetime) ? (Object?)datetime : jsonElement.GetString(),
+                _ => jsonElement,
+            },
+            _ => throw new Exception("Unhandled WireValue type"),
         };
+
+        private static (IEnumerable<IWireValue>, IEnumerable<ITransferable>) ProcessArguments(IEnumerable<Object?> arguments)
+        {
+            (IEnumerable<IWireValue> Value, IEnumerable<ITransferable> Transferables) seed = (Array.Empty<IWireValue>(), Array.Empty<ITransferable>());
+            return arguments.Select(ToWireValue).Aggregate(seed, (result, argument) => (result.Value.Append(argument.Value), result.Transferables.Concat(argument.Transferables)));
+        }
+
+        private static void ThrowIfProxyReleased(Boolean released)
+        {
+            if (released)
+            {
+                throw new Exception("Proxy has been released and is not useable");
+            }
+        }
+        
+        private static ValueTask<IWireValue?> RequestResponseMessage(IEndpoint endpoint, IMessage message, ITransferable[]? transferables = null)
+        {
+            // Set up async handling
+            TaskCompletionSource<IWireValue?> tcs = new TaskCompletionSource<IWireValue?>();
+
+            // Set up the message id
+            String id = Guid.NewGuid().ToString();
+            message.Id = id;
+
+            // Kick off actual message logic
+            endpoint.Message += Handler;
+            endpoint.Start();
+            endpoint.PostMessage(message, transferables);
+
+            return new ValueTask<IWireValue?>(tcs.Task);
+
+            void Handler(IMessage response)
+            {
+                if (response.Id != id)
+                {
+                    return;
+                }
+
+                endpoint.Message -= Handler;
+                tcs.SetResult(response.Value);
+            }
+        }
+    }
+
+    public class Symbol : IEquatable<Symbol>
+    {
+        private readonly Object _object = new Object();
+        public String? Description { get; }
+
+        public Symbol(String? description = null)
+        {
+            Description = description;
+        }
+
+        public Boolean Equals(Symbol? other) => other?._object == _object;
+        public static Boolean operator ==(Symbol? o1, Symbol? o2) => EqualityComparer<Symbol>.Default.Equals(o1, o2);
+        public static Boolean operator !=(Symbol? o1, Symbol? o2) => !(o1 == o2);
+
+        public override Int32 GetHashCode() => _object.GetHashCode();
+
+        public override Boolean Equals(Object? obj) => Equals(obj as Symbol);
+        public override String ToString() => $"symbol({Description})";
+
+        // static methods to support symbol registry
+        private static readonly Dictionary<String, Symbol> GlobalSymbols = new Dictionary<String, Symbol>(StringComparer.Ordinal);
+
+        public static Symbol For(String key) => GlobalSymbols[key] ??= new Symbol(key);
+
+        public static String? KeyFor(Symbol s) => GlobalSymbols.FirstOrDefault(a => a.Value == s).Key;
+
+        // Well-known ECMAScript symbols
+        private const String ns = "Symbol.";
+        public static Symbol HasInstance => For(ns + "hasInstance");
+        public static Symbol IsConcatSpreadable => For(ns + "isConcatSpreadable");
+        public static Symbol Iterator => For(ns + "iterator");
+        public static Symbol Match => For(ns + "match");
+        public static Symbol Replace => For(ns + "replace");
+        public static Symbol Search => For(ns + "search");
+        public static Symbol Species => For(ns + "species");
+        public static Symbol Split => For(ns + "split");
+        public static Symbol ToPrimitive => For(ns + "toPrimitive");
+        public static Symbol ToStringTag => For(ns + "toStringTag");
+        public static Symbol Unscopables => For(ns + "unscopables");
+    }
+
+    public static class Extensions
+    {
+        public static T[] Append<T>(this T[] subject, T item) => subject.ToList().Append(item).ToArray();
+
+        public static async ValueTask<T> FromWireValue<T>(this ValueTask<IWireValue?> valueTask) => (T)Comlink.FromWireValue(await valueTask)!;
     }
 }

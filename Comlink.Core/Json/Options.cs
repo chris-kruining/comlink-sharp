@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Comlink.Core.Json
 {
@@ -12,7 +12,6 @@ namespace Comlink.Core.Json
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 };
-                options.Converters.Add(new ObjectConverter());
 
                 return options;
             }

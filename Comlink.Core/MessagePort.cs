@@ -1,6 +1,11 @@
-namespace Comlink.Core
+﻿namespace Comlink.Core
 {
-    public class MessagePort : Endpoint, ITransferable
+    public interface IMessagePort : IEndpoint, ITransferable
+    {
+
+    }
+
+    public class MessagePort : Endpoint, IMessagePort
     {
         public MessagePort(IWindow window) : base(window)
         {
