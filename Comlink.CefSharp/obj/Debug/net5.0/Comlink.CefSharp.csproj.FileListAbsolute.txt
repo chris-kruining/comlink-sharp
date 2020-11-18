@@ -1,7 +1,0 @@
-D:\Github\comlink-sharp\Comlink.CefSharp\bin\Debug\net5.0\Comlink.CefSharp.deps.json
-D:\Github\comlink-sharp\Comlink.CefSharp\bin\Debug\net5.0\Comlink.CefSharp.dll
-D:\Github\comlink-sharp\Comlink.CefSharp\bin\Debug\net5.0\Comlink.Core.dll
-D:\Github\comlink-sharp\Comlink.CefSharp\bin\Debug\net5.0\Comlink.Core.pdb
-D:\Github\comlink-sharp\Comlink.CefSharp\obj\Debug\net5.0\Comlink.CefSharp.AssemblyInfoInputs.cache
-D:\Github\comlink-sharp\Comlink.CefSharp\obj\Debug\net5.0\Comlink.CefSharp.AssemblyInfo.cs
-D:\Github\comlink-sharp\Comlink.CefSharp\obj\Debug\net5.0\Comlink.CefSharp.csproj.CopyComplete

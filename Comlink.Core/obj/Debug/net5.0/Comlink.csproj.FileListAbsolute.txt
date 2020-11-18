@@ -1,9 +1,0 @@
-D:\Github\comlink-sharp\Comlink\bin\Debug\net5.0\Comlink.deps.json
-D:\Github\comlink-sharp\Comlink\bin\Debug\net5.0\Comlink.dll
-D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.AssemblyInfoInputs.cache
-D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.AssemblyInfo.cs
-D:\Github\comlink-sharp\Comlink\bin\Debug\net5.0\WebView2Loader.dll
-D:\Github\comlink-sharp\Comlink\bin\Debug\net5.0\Comlink.pdb
-D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.csproj.CoreCompileInputs.cache
-D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.dll
-D:\Github\comlink-sharp\Comlink\obj\Debug\net5.0\Comlink.pdb
