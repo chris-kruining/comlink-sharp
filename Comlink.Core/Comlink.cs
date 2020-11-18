@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Comlink.Json;
 
-namespace Comlink
+namespace Comlink.Core
 {
     public static class Comlink
     {

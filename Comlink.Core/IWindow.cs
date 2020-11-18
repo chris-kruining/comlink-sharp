@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Comlink
+namespace Comlink.Core
 {
     public interface IWindow
     {

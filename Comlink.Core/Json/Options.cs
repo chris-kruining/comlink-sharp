@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
-namespace Comlink.Json
+namespace Comlink.Core.Json
 {
     public static class Options
     {

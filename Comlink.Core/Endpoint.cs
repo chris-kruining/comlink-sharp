@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Text.Json;
-using Comlink.Json;
+using Comlink.Core.Json;
 
-namespace Comlink
+namespace Comlink.Core
 {
     public class Endpoint
     {

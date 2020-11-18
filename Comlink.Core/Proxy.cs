@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Dynamic;
 
-namespace Comlink
+namespace Comlink.Core
 {
     public class Proxyfied : Proxy<Object?>
     {

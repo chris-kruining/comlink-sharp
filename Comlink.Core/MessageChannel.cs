@@ -1,4 +1,4 @@
-﻿namespace Comlink
+namespace Comlink.Core
 {
     public class MessageChannel
     {
