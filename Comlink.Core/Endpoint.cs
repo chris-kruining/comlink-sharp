@@ -7,7 +7,7 @@ namespace Comlink.Core
     public interface IEndpoint
     {
         public event Action<IMessage>? Message;
-        public void PostMessage(dynamic message, params ITransferable[]? transferables);
+        public void PostMessage(IMessage message, params ITransferable[]? transferables);
         public void Start();
         public void Close();
     }
@@ -24,7 +24,7 @@ namespace Comlink.Core
             _window.Message += json => Message?.Invoke(Core.Message.FromJson(json));
         }
 
-        public void PostMessage(dynamic message, params ITransferable[]? transferables)
+        public void PostMessage(IMessage message, params ITransferable[]? transferables)
         {
             String serializedMessage = JsonSerializer.Serialize(message, JsonSerializerOptions);
 

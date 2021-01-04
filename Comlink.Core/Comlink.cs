@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -10,23 +11,17 @@ namespace Comlink.Core
 {
     public static class Comlink
     {
-        public static Symbol ProxyMarker { get; } = new Symbol("Comlink.proxy");
         public static Symbol CreateEndpoint { get; } = new Symbol("Comlink.endpoint");
         public static Symbol ReleaseProxy { get; } = new Symbol("Comlink.releaseProxy");
 
-        // TODO(Chris Kruining) Figure out if we need this, since we're working in C# and not ES6
-        private static readonly Symbol ThrowMarker = new Symbol("Comlink.thrown");
+        public static dynamic Wrap<T>(IEndpoint endpoint, T target = default) => CreateProxy(endpoint, Array.Empty<PropertyAccessor>(), target);
 
-        public static Proxy<T> Wrap<T>(IEndpoint endpoint, Object? target = null) => CreateProxy<T>(endpoint, Array.Empty<PropertyAccessor>(), target);
-
-        public static Proxy<T> CreateProxy<T>(IEndpoint endpoint, PropertyAccessor[] path, Object? target = null)
+        public static Proxy<T> CreateProxy<T>(IEndpoint endpoint, PropertyAccessor[] path, T target = default)
         {
-            target ??= new Action(() => { });
-
             Boolean isProxyReleased = false;
 
             Proxy<T>? proxy = null;
-            proxy = new Proxy<T>((T)target, new Proxy<T>.Arguments
+            proxy = new Proxy<T>(target, new Proxy<T>.Arguments
             {
                 Get = async (_target, property) =>
                 {
@@ -157,40 +152,54 @@ namespace Comlink.Core
                     }
                 ) ?? throw new Exception($"Unable to access the path '{message.Path}'");
 
-                Object? returnValue = message.Type switch
+                Object? returnValue;
+
+                try
                 {
-                    MessageType.Get => value,
-                    MessageType.Set => new Func<Boolean>(() =>
+                    returnValue = message.Type switch
                     {
-                        try
+                        MessageType.Get => value,
+                        MessageType.Set => new Func<Boolean>(() =>
                         {
-                            (member as PropertyInfo)?.SetValue(owner, args[0]);
+                            try
+                            {
+                                (member as PropertyInfo)?.SetValue(owner, args[0]);
 
-                            return true;
-                        }
-                        catch
+                                return true;
+                            }
+                            catch
+                            {
+                                return false;
+                            }
+                        })(),
+                        MessageType.Apply => (member as MethodInfo)?.Invoke(owner, args),
+                        MessageType.Construct => Proxy(Activator.CreateInstance(typeof(T), args)),
+                        MessageType.Endpoint => new Func<Object?>(() =>
                         {
-                            return false;
-                        }
-                    }).Invoke(),
-                    MessageType.Apply => (member as MethodInfo)?.Invoke(owner, args),
-                    MessageType.Construct => Activator.CreateInstance(typeof(T), args), // TODO(Chris Kruining) proxyfy the instance
-                    MessageType.Endpoint => new Func<Object?>(() =>
-                    {
-                        (MessagePort port1, MessagePort port2) = new MessageChannel();
+                            (IMessagePort port1, IMessagePort port2) = new MessageChannel();
 
-                        Expose(target, port2);
+                            Expose(target, port2);
 
-                        return Transfer(port1, port1);
-                    }).Invoke(),
-                    MessageType.Release => null,
-                    _ => throw new Exception("Unhandled message type"),
-                };
+                            return Transfer(port1, port1);
+                        })(),
+                        MessageType.Release => null,
+                        _ => throw new Exception("Unhandled message type"),
+                    };
+                }
+                catch(Exception e)
+                {
+                    returnValue = e;
+                }
 
                 (IWireValue wireValue, ITransferable[] transferables) = ToWireValue(returnValue);
-                wireValue.Id = message.Id;
+                IMessage response = new Message
+                {
+                    Id = message.Id,
+                    Type = message.Type,
+                    Value = wireValue.Value,
+                };
 
-                endpoint.PostMessage(wireValue, transferables);
+                endpoint.PostMessage(response, transferables);
             };
         }
 
@@ -204,7 +213,7 @@ namespace Comlink.Core
 
         public static Proxy<TValue> Proxy<TValue>(TValue target) => new Proxy<TValue>(target, new Proxy<TValue>.Arguments());
 
-        private static readonly IDictionary<String, ITransferHandler> _handlers = new Dictionary<String, ITransferHandler>
+        public static readonly IDictionary<String, ITransferHandler> _handlers = new Dictionary<String, ITransferHandler>
         {
             { "proxy", new ProxyTransferHandler() },
             { "throw", new ThrowTransferHandler() }, 
@@ -218,7 +227,7 @@ namespace Comlink.Core
                 return (
                     new WireValue
                     {
-                        Type = WireValueType.Handler,
+                        Type = IHandlerWireValue.Type,
                         Name = handler.Name,
                         Value = v,
                     },
@@ -230,25 +239,31 @@ namespace Comlink.Core
             return (
                 new WireValue
                 {
-                    Type = WireValueType.Raw,
+                    Type = IRawWireValue.Type,
                     Value = value,
                 },
                 transferables ?? new ITransferable[0]
             );
         }
 
-        public static Object? FromWireValue(IWireValue? wireValue) => wireValue?.Type switch
+        public static Object? FromWireValue(Object? value) => value switch
         {
-            WireValueType.Handler => _handlers[wireValue.Name ?? ""].Deserialize(wireValue.Value),
-            WireValueType.Raw when wireValue.Value is JsonElement jsonElement => jsonElement.ValueKind switch
+            IWireValue wireValue => wireValue?.Type switch
             {
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.Number => jsonElement.TryGetInt64(out long l) ? l : jsonElement.GetDouble(),
-                JsonValueKind.String => jsonElement.TryGetDateTime(out DateTime datetime) ? (Object?)datetime : jsonElement.GetString(),
-                _ => jsonElement,
+                WireValueType.Handler => _handlers[wireValue.Name ?? ""].Deserialize(wireValue.Value),
+                WireValueType.Raw when wireValue.Value is JsonElement jsonElement => HandleJsonValues(jsonElement),
+                _ => throw new Exception("Unhandled WireValue type"),
             },
-            _ => throw new Exception("Unhandled WireValue type"),
+            JsonElement jsonElement => HandleJsonValues(jsonElement),
+            _ => value,
+        };
+        private static Object? HandleJsonValues(JsonElement jsonElement) => jsonElement.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Number => jsonElement.TryGetInt64(out long l) ? l : jsonElement.GetDouble(),
+            JsonValueKind.String => jsonElement.TryGetDateTime(out DateTime datetime) ? (Object?)datetime : jsonElement.GetString(),
+            _ => jsonElement,
         };
 
         private static (IEnumerable<IWireValue>, IEnumerable<ITransferable>) ProcessArguments(IEnumerable<Object?> arguments)
@@ -265,10 +280,10 @@ namespace Comlink.Core
             }
         }
         
-        private static ValueTask<IWireValue?> RequestResponseMessage(IEndpoint endpoint, IMessage message, ITransferable[]? transferables = null)
+        private static ValueTask<Object?> RequestResponseMessage(IEndpoint endpoint, IMessage message, ITransferable[]? transferables = null)
         {
             // Set up async handling
-            TaskCompletionSource<IWireValue?> tcs = new TaskCompletionSource<IWireValue?>();
+            TaskCompletionSource<Object?> tcs = new TaskCompletionSource<Object?>();
 
             // Set up the message id
             String id = Guid.NewGuid().ToString();
@@ -279,7 +294,7 @@ namespace Comlink.Core
             endpoint.Start();
             endpoint.PostMessage(message, transferables);
 
-            return new ValueTask<IWireValue?>(tcs.Task);
+            return new ValueTask<Object?>(tcs.Task);
 
             void Handler(IMessage response)
             {
@@ -339,6 +354,6 @@ namespace Comlink.Core
     {
         public static T[] Append<T>(this T[] subject, T item) => subject.ToList().Append(item).ToArray();
 
-        public static async ValueTask<T> FromWireValue<T>(this ValueTask<IWireValue?> valueTask) => (T)Comlink.FromWireValue(await valueTask)!;
+        public static async ValueTask<T> FromWireValue<T>(this ValueTask<Object?> valueTask) => (T)Comlink.FromWireValue(await valueTask)!;
     }
 }

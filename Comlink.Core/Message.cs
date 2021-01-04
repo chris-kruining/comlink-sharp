@@ -28,7 +28,7 @@ namespace Comlink.Core
 
         String? Id { get; set; }
         IEnumerable<String>? Path { get; set; }
-        IWireValue? Value { get; set; }
+        Object? Value { get; set; }
     }
     public interface IApplyMessage
     {
@@ -36,7 +36,7 @@ namespace Comlink.Core
 
         String? Id { get; set; }
         IEnumerable<String>? Path { get; set; }
-        IEnumerable<IWireValue>? ArgumentList { get; set; }
+        IEnumerable<Object?>? ArgumentList { get; set; }
     }
     public interface IConstructMessage
     {
@@ -44,7 +44,7 @@ namespace Comlink.Core
 
         String? Id { get; set; }
         IEnumerable<String>? Path { get; set; }
-        IEnumerable<IWireValue>? ArgumentList { get; set; }
+        IEnumerable<Object?>? ArgumentList { get; set; }
     }
     public interface IEndpointMessage
     {
@@ -63,17 +63,17 @@ namespace Comlink.Core
     {
         MessageType Type { get; set; }
         new String? Id { get; set; }
-        new IWireValue? Value { get; set; }
+        new Object? Value { get; set; }
         new IEnumerable<String>? Path { get; set; }
-        new IEnumerable<IWireValue>? ArgumentList { get; set; }
+        new IEnumerable<Object?>? ArgumentList { get; set; }
     }
     public class Message : IMessage
     {
         public MessageType Type { get; set; }
         public String? Id { get; set; }
         public IEnumerable<String>? Path { get; set; }
-        public IEnumerable<IWireValue>? ArgumentList { get; set; }
-        public IWireValue? Value { get; set; }
+        public IEnumerable<Object?>? ArgumentList { get; set; }
+        public Object? Value { get; set; }
 
         public void Deconstruct(out String? id, out MessageType type, out IEnumerable<String>? path)
         {

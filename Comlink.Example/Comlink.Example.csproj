@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishSingleFile>true</PublishSingleFile>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWPF>true</UseWPF>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <StartupObject>Comlink.Example.App</StartupObject>
+    <Nullable>enable</Nullable>
+
+    <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CefSharp.Wpf" Version="85.3.130" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.674-prerelease" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Comlink.CefSharp\Comlink.CefSharp.csproj" />
+    <ProjectReference Include="..\Comlink.WebView2\Comlink.WebView2.csproj" />
+  </ItemGroup>
+
+</Project>
