@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CefSharp.Wpf" Version="102.0.90" />
+    <PackageReference Include="CefSharp.Wpf" Version="102.0.100" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.1245.22" />
   </ItemGroup>
 
