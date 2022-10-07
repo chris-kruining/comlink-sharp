@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -33,11 +33,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CefSharp.Common" Version="106.0.260" />
+    <ProjectReference Include="..\Comlink.Core\Comlink.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Comlink.Core\Comlink.Core.csproj" />
+    <PackageReference Include="CefSharp.Wpf.NETCore" Version="106.0.260" />
   </ItemGroup>
 
 </Project>

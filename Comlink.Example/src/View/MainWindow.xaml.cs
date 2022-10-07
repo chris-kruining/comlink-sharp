@@ -1,11 +1,12 @@
 ﻿using System.Windows;
 using Comlink.Core;
+using Comlink.CefSharp;
 using Comlink.WebView2;
 
 // NOTE(Chris Kruining)
 // - You wouldn't have to refer to `Comlink` as `Core.Comlink`, this is just a side effect of C# namespacing
 
-namespace Comlink.Example
+namespace Comlink.Example.View
 {
     public partial class MainWindow : Window
     {
@@ -17,12 +18,15 @@ namespace Comlink.Example
         private void Initialize()
         {
             Kaas kaas = new Kaas();
-            WebView2.Expose(kaas);
-
             Proxy<Kaas> proxied = Core.Comlink.Proxy(kaas);
-            dynamic remote = Core.Comlink.Wrap<ClientSchema>(WebView2.ToEndpoint());
-
-            remote.SomeMethod("a string value");
+            
+            WebView2Browser.Expose(kaas);
+            dynamic remote1 = Core.Comlink.Wrap<ClientSchema>(WebView2Browser.ToEndpoint());
+            remote1.SomeMethod("a string value");
+            
+            CefSharpBrowser.Expose(kaas);
+            dynamic remote2 = Core.Comlink.Wrap<ClientSchema>(CefSharpBrowser.ToEndpoint());
+            remote2.SomeMethod("a string value");
         }
     }
 

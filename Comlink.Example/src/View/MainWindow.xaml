@@ -1,5 +1,5 @@
 ﻿<Window 
-    x:Class="Comlink.Example.MainWindow"
+    x:Class="Comlink.Example.View.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -19,13 +19,14 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
+        
         <TabControl>
             <TabItem Header="Webview2">
-                <wv2:WebView2 Name="WebView2" Source="https://google.com" />
+                <wv2:WebView2 x:Name="WebView2Browser" Source="https://google.com" />
             </TabItem>
 
             <TabItem Header="CefSharp">
-                <cefSharp:ChromiumWebBrowser Address="https://google.com" />
+                <cefSharp:ChromiumWebBrowser x:Name="CefSharpBrowser" Address="https://google.com" />
             </TabItem>
         </TabControl>
     </Grid>

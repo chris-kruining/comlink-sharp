@@ -1,28 +1,43 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
-    <PublishTrimmed>true</PublishTrimmed>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <PublishSingleFile>true</PublishSingleFile>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <UseWPF>true</UseWPF>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <StartupObject>Comlink.Example.App</StartupObject>
+    <StartupObject>Comlink.Example.View.App</StartupObject>
     <Nullable>enable</Nullable>
 
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
+    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
     <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CefSharp.Wpf" Version="106.0.260" />
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.1343.22" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.1369-prerelease" />
+    <PackageReference Include="CefSharp.Wpf.NETCore" Version="106.0.260" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Comlink.CefSharp\Comlink.CefSharp.csproj" />
+    <ProjectReference Include="..\Comlink.Core\Comlink.Core.csproj" />
+<!--    <ProjectReference Include="..\Comlink.CefSharp\Comlink.CefSharp.csproj" />-->
     <ProjectReference Include="..\Comlink.WebView2\Comlink.WebView2.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Include="src\View\App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="src\View\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
 </Project>
