@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Example page</title>
+</head>
+<body>
+    <h1>HELLO WORLD</h1>
+
+    <script type="module">
+        import { expose, windowEndpoint } from './node_modules/comlink/dist/esm/comlink.mjs';
+                
+        expose({
+            someMethod(message)
+            {
+                console.log(message);
+            }
+        }, windowEndpoint({ postMessage(message, targetOrigin, transferables){
+                window.chrome.webview.postMessage(message, transferables);
+            } }, window.chrome.webview));
+    </script>
+</body>
+</html>

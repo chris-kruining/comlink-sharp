@@ -11,8 +11,8 @@ namespace Comlink.Core
 {
     public static class Comlink
     {
-        public static Symbol CreateEndpoint { get; } = new Symbol("Comlink.endpoint");
-        public static Symbol ReleaseProxy { get; } = new Symbol("Comlink.releaseProxy");
+        public static Symbol CreateEndpoint { get; } = new("Comlink.endpoint");
+        public static Symbol ReleaseProxy { get; } = new("Comlink.releaseProxy");
 
         public static dynamic Wrap<T>(IEndpoint endpoint, T target = default) => CreateProxy(endpoint, Array.Empty<PropertyAccessor>(), target);
 
@@ -78,7 +78,7 @@ namespace Comlink.Core
                 {
                     ThrowIfProxyReleased(isProxyReleased);
 
-                    PropertyAccessor last = path[^1];
+                    PropertyAccessor last = path.Length > 0 ? path[^1] : property;
                     IMessage message;
 
                     if (last == CreateEndpoint)
@@ -100,7 +100,7 @@ namespace Comlink.Core
                     message = new Message
                     {
                         Type = MessageType.Apply,
-                        Path = path.Select(p => p.ToString()),
+                        Path = path.Append(property).Select(p => p.ToString()),
                         ArgumentList = arguments,
                     };
                     return await RequestResponseMessage(endpoint, message, transferables.ToArray()).FromWireValue<Object?>();
@@ -283,7 +283,7 @@ namespace Comlink.Core
         private static ValueTask<Object?> RequestResponseMessage(IEndpoint endpoint, IMessage message, ITransferable[]? transferables = null)
         {
             // Set up async handling
-            TaskCompletionSource<Object?> tcs = new TaskCompletionSource<Object?>();
+            TaskCompletionSource<Object?> tcs = new();
 
             // Set up the message id
             String id = Guid.NewGuid().ToString();

@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Comlink.Core.Json
 {
@@ -8,9 +9,13 @@ namespace Comlink.Core.Json
         {
             get
             {
-                JsonSerializerOptions options = new JsonSerializerOptions
+                JsonSerializerOptions options = new()
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    Converters =
+                    {
+                        new JsonStringEnumConverter(new JsonUpperCaseNamingPolicy()),
+                    },
                 };
 
                 return options;

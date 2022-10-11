@@ -108,21 +108,21 @@ namespace Comlink.Core
 
     public class PropertyAccessor
     {
-        private readonly String? _prop;
+        private readonly String? _property;
         private readonly Symbol? _symbol;
 
-        public PropertyAccessor(String? prop = null, Symbol? symbol = null)
+        public PropertyAccessor(String? property = null, Symbol? symbol = null)
         {
-            _prop = prop;
+            _property = property;
             _symbol = symbol;
         }
 
-        public override String ToString() => _prop ?? _symbol?.ToString() ?? throw new Exception("Invalid state, both 'prop' and 'symbol' are null");
+        public override String ToString() => _property ?? _symbol?.ToString() ?? throw new Exception("Invalid state, both 'prop' and 'symbol' are null");
 
-        public static implicit operator String?(PropertyAccessor property) => property._prop;
+        public static implicit operator String?(PropertyAccessor property) => property._property;
         public static implicit operator Symbol?(PropertyAccessor property) => property._symbol;
 
-        public static implicit operator PropertyAccessor(String property) => new PropertyAccessor(property);
-        public static implicit operator PropertyAccessor(Symbol property) => new PropertyAccessor(null, property);
+        public static implicit operator PropertyAccessor(String property) => new(property);
+        public static implicit operator PropertyAccessor(Symbol property) => new(null, property);
     }
 }

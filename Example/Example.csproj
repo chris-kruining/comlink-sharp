@@ -5,12 +5,14 @@
     <PublishReadyToRun>true</PublishReadyToRun>
     <UseWPF>true</UseWPF>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <StartupObject>Comlink.Example.View.App</StartupObject>
+    <StartupObject>Example.View.App</StartupObject>
     <Nullable>enable</Nullable>
 
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
     <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
     <Platforms>x64</Platforms>
+    <AssemblyName>Example</AssemblyName>
+    <RootNamespace>Example</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Comlink.Core\Comlink.Core.csproj" />
-<!--    <ProjectReference Include="..\Comlink.CefSharp\Comlink.CefSharp.csproj" />-->
+    <ProjectReference Include="..\Comlink.CefSharp\Comlink.CefSharp.csproj" />
     <ProjectReference Include="..\Comlink.WebView2\Comlink.WebView2.csproj" />
   </ItemGroup>
 
@@ -38,6 +40,12 @@
       <XamlRuntime>Wpf</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>
+    <Page Remove="src\Web\node_modules\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="src\Web\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

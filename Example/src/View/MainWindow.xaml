@@ -1,5 +1,5 @@
 ﻿<Window 
-    x:Class="Comlink.Example.View.MainWindow"
+    x:Class="Example.View.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -22,11 +22,11 @@
         
         <TabControl>
             <TabItem Header="Webview2">
-                <wv2:WebView2 x:Name="WebView2Browser" Source="https://google.com" />
+                <wv2:WebView2 x:Name="WebView2Browser" Source="https://myapp/src/Web/example.html"  />
             </TabItem>
 
             <TabItem Header="CefSharp">
-                <cefSharp:ChromiumWebBrowser x:Name="CefSharpBrowser" Address="https://google.com" />
+                <cefSharp:ChromiumWebBrowser x:Name="CefSharpBrowser" Address="https://myapp/src/Web/example.html" />
             </TabItem>
         </TabControl>
     </Grid>
