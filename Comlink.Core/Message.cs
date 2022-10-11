@@ -82,6 +82,7 @@ namespace Comlink.Core
             path = Path;
         }
 
-        public static IMessage FromJson(String json) => JsonSerializer.Deserialize<Message>(json, Options.Default) ?? throw new Exception("Invalid message received, could not deserialize json to instance of 'Message'");
+        public static IMessage FromJson(String json) => 
+            JsonSerializer.Deserialize<Message>(json, Options.Default) ?? throw new Exception("Invalid message received, could not deserialize json to instance of 'Message'");
     }
 }

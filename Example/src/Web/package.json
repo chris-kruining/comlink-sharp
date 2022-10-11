@@ -1,0 +1,7 @@
+{
+    "name": "Example",
+    "version": "1.0.0",
+    "dependencies": {
+        "comlink": "^4.3.1"
+    }
+}

@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Comlink.Example.View
+namespace Example.View
 {
     /// <summary>
     /// Interaction logic for App.xaml

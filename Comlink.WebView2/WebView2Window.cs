@@ -9,12 +9,13 @@ namespace Comlink.WebView2
         public WebView2Window(Microsoft.Web.WebView2.Wpf.WebView2 window)
         {
             _window = window;
-            _window.WebMessageReceived += (s, a) => Message?.Invoke(a.WebMessageAsJson);
+            _window.WebMessageReceived += (s, a) => 
+                Message?.Invoke(a.WebMessageAsJson);
         }
 
         public void Start()
         {
-
+            // _window.ExecuteScriptAsync(@"window.chrome.webview.addEventListener('message', e => console.log(e))");
         }
 
         public event Action<String>? Message;
