@@ -19,7 +19,7 @@ namespace Example.View
         {
             PreInitialize();
             InitializeComponent();
-            PostInitialize();
+            Logic();
         }
 
         private void PreInitialize()
@@ -39,10 +39,9 @@ namespace Example.View
             Cef.Initialize(settings);
         }
 
-        private void PostInitialize()
+        private void Logic()
         {
-            Kaas kaas = new Kaas();
-            Proxy<Kaas> proxied = Proxy(kaas);
+            Kaas kaas = new();
             
             WebView2Browser.CoreWebView2InitializationCompleted += (e, v) =>
             {
@@ -68,13 +67,27 @@ namespace Example.View
                     Id = "KAAS IS AWESOME",
                     Type = MessageType.Apply,
                     Path = new[]{ "someMethod" },
-                    ArgumentList = new []{ new{ type = "RAW", value = "some message" } }
+                    ArgumentList = new []{ new WireValue{ Type = WireValueType.Raw, Value = "some message" } }
                 });
             };
 
-            CefSharpBrowser.Expose(kaas);
-            // dynamic remote2 = Wrap<IClientSchema>(CefSharpBrowser.ToEndpoint());
-            // remote2.SomeMethod("a string value");
+            CefSharpBrowser.Loaded += (_, _) =>
+            {
+                // CefSharpBrowser.ShowDevTools();
+                CefSharpBrowser.Expose(kaas);
+                var endpoint = CefSharpBrowser.ToEndpoint();
+                dynamic remote2 = Wrap<IClientSchema>(endpoint);
+                // remote2.SomeMethod("a string value");
+                
+                
+                endpoint.PostMessage(new Message
+                {
+                    Id = "KAAS IS AWESOME",
+                    Type = MessageType.Apply,
+                    Path = new[]{ "someMethod" },
+                    ArgumentList = new []{ new WireValue{ Type = WireValueType.Raw, Value = "some message" } }
+                });
+            };
         }
     }
 
@@ -82,7 +95,7 @@ namespace Example.View
     {
         public void SomeCSharpMethod(String message)
         {
-            
+            Console.WriteLine(message);
         }
     }
 

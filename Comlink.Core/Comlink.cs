@@ -95,7 +95,7 @@ namespace Comlink.Core
                         return CreateProxy<T>(endpoint, path[..^2]);
                     }
 
-                    (IEnumerable<IWireValue> arguments, IEnumerable<ITransferable> transferables) = ProcessArguments(args);
+                    (IEnumerable<WireValue> arguments, IEnumerable<ITransferable> transferables) = ProcessArguments(args);
 
                     message = new Message
                     {
@@ -109,7 +109,7 @@ namespace Comlink.Core
                 {
                     ThrowIfProxyReleased(isProxyReleased);
 
-                    (IEnumerable<IWireValue> arguments, IEnumerable<ITransferable> transferables) = ProcessArguments(args);
+                    (IEnumerable<WireValue> arguments, IEnumerable<ITransferable> transferables) = ProcessArguments(args);
                     IMessage message = new Message
                     {
                         Type = MessageType.Construct,
@@ -133,7 +133,13 @@ namespace Comlink.Core
         {
             endpoint.Message += message =>
             {
-                Object?[] args = message.ArgumentList?.Select(FromWireValue).ToArray() ?? (message.Value != null ? new[]{ FromWireValue(message.Value) } : Array.Empty<Object?>());
+                if (message.Type == MessageType.Raw)
+                {
+                    return;
+                }
+                
+                Object?[] args = message.ArgumentList?.Select(FromWireValue).ToArray() 
+                    ?? (message.Value != null ? new[]{ FromWireValue(message.Value) } : Array.Empty<Object?>());
 
                 // NOTE(Chris Kruining) this uses the path provided by the message and converts it into MemberInfo for easy manipulation
                 (Object? owner, Object? value, MemberInfo? member) = message.Path?.Aggregate<String, (Object? owner, Object? value, MemberInfo?)?>(
@@ -150,7 +156,8 @@ namespace Comlink.Core
 
                         return (obj?.value, value, member);
                     }
-                ) ?? throw new Exception($"Unable to access the path '{message.Path}'");
+                ) ?? (null, null, null);
+                // ) ?? throw new Exception($"Unable to access the path '{message.Path}'");
 
                 Object? returnValue;
 
@@ -203,7 +210,7 @@ namespace Comlink.Core
             };
         }
 
-        private static ConditionalWeakTable<Object, ITransferable[]> _transferCache = new ConditionalWeakTable<Object, ITransferable[]>();
+        private static ConditionalWeakTable<Object?, ITransferable[]> _transferCache = new();
         public static T Transfer<T>(T target, params ITransferable[] transferables)
         {
             _transferCache.Add(target!, transferables);
@@ -211,14 +218,14 @@ namespace Comlink.Core
             return target;
         }
 
-        public static Proxy<TValue> Proxy<TValue>(TValue target) => new Proxy<TValue>(target, new Proxy<TValue>.Arguments());
+        public static Proxy<TValue> Proxy<TValue>(TValue target) => new(target, new Proxy<TValue>.Arguments());
 
         public static readonly IDictionary<String, ITransferHandler> _handlers = new Dictionary<String, ITransferHandler>
         {
             { "proxy", new ProxyTransferHandler() },
             { "throw", new ThrowTransferHandler() }, 
         };
-        public static (IWireValue Value, ITransferable[] Transferables) ToWireValue<T>(T value)
+        public static (WireValue Value, ITransferable[] Transferables) ToWireValue<T>(T value)
         {
             if (_handlers.FirstOrDefault(h => h.Value.CanHandle(value)) is ITransferHandler<T, Object?> handler)
             {
@@ -235,14 +242,20 @@ namespace Comlink.Core
                 );
             }
 
-            _transferCache.TryGetValue(value, out ITransferable[]? transferables);
+            ITransferable[]? transferables = null;
+            
+            if (value != null)
+            {
+                _transferCache.TryGetValue(value, out transferables);
+            }
+            
             return (
                 new WireValue
                 {
                     Type = IRawWireValue.Type,
                     Value = value,
                 },
-                transferables ?? new ITransferable[0]
+                transferables ?? Array.Empty<ITransferable>()
             );
         }
 
@@ -266,9 +279,9 @@ namespace Comlink.Core
             _ => jsonElement,
         };
 
-        private static (IEnumerable<IWireValue>, IEnumerable<ITransferable>) ProcessArguments(IEnumerable<Object?> arguments)
+        private static (IEnumerable<WireValue>, IEnumerable<ITransferable>) ProcessArguments(IEnumerable<Object?> arguments)
         {
-            (IEnumerable<IWireValue> Value, IEnumerable<ITransferable> Transferables) seed = (Array.Empty<IWireValue>(), Array.Empty<ITransferable>());
+            (IEnumerable<WireValue> Value, IEnumerable<ITransferable> Transferables) seed = (Array.Empty<WireValue>(), Array.Empty<ITransferable>());
             return arguments.Select(ToWireValue).Aggregate(seed, (result, argument) => (result.Value.Append(argument.Value), result.Transferables.Concat(argument.Transferables)));
         }
 

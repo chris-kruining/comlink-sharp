@@ -8,16 +8,27 @@
     <h1>HELLO WORLD</h1>
 
     <script type="module">
-        import { expose, windowEndpoint } from './node_modules/comlink/dist/esm/comlink.mjs';
-                
+        import { wrap, expose, windowEndpoint } from './node_modules/comlink/dist/esm/comlink.mjs';
+             
+        const endpoint = windowEndpoint(
+            { 
+                postMessage(message, targetOrigin, transferables)
+                {
+                    window.chrome.webview.postMessage(message, transferables);
+                } 
+            }, 
+            window.chrome.webview
+        );
+        
+        const Kaas = wrap(endpoint);
+        await Kaas.someCSharpMethod('KAAS');
+        
         expose({
             someMethod(message)
             {
                 console.log(message);
             }
-        }, windowEndpoint({ postMessage(message, targetOrigin, transferables){
-                window.chrome.webview.postMessage(message, transferables);
-            } }, window.chrome.webview));
+        }, );
     </script>
 </body>
 </html>
