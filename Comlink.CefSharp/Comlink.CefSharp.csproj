@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CefSharp.Wpf.NETCore" Version="119.1.20" />
+    <PackageReference Include="CefSharp.Wpf.NETCore" Version="119.4.30" />
   </ItemGroup>
 
 </Project>
